@@ -1,92 +1,228 @@
-﻿# Dev HQ
+# Dev HQ
 
-A repository-based development control plane for ChatGPT projects.
+**A development control plane for ChatGPT.**
 
-Dev HQ is not an autonomous coding agent. It is a set of project instructions, lifecycle rules, local scripts, quality gates, recovery procedures, skills and a lightweight watchdog that make long ChatGPT development sessions more structured and recoverable.
+Dev HQ turns long, tool-heavy ChatGPT development sessions into a staged, recoverable workflow with explicit architecture, task state, checkpoints, operation tracking, quality gates and a local watchdog.
 
-## What it provides
+**ChatGPT-first. Codex optional. External coding agents are not required for the core workflow.**
 
-- architecture/TZ/stage-first workflow for new projects;
-- explicit lifecycle runs with checkpoints and evidence;
-- operation tracking for long or failure-prone tool calls;
-- recovery rules after interrupted chats or tool failures;
-- a local watchdog for task/runtime diagnostics;
-- quality-gate and secret checks before completion;
-- verified local backups;
-- reusable tool skills and six compact ChatGPT Project Sources;
-- separation between reusable HQ logic and private environment/project state.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-## Core idea
+## Why Dev HQ exists
 
-The public repository contains reusable rules and tooling. Your machine, accounts, project registry, credentials, production state and runtime logs stay local and are intentionally excluded from Git.
+Chat-based development is powerful, but longer projects tend to fail in predictable ways:
 
-## Quick start
+- context gets lost between chats;
+- a tool call hangs and the whole workflow stalls;
+- a retry repeats an unknown side effect;
+- "the process is alive" gets mistaken for real progress;
+- implementation starts before architecture and acceptance criteria are clear;
+- testing happens too late;
+- the assistant finishes work but never reports what actually changed.
 
-1. Clone this repository into a local folder.
-2. Create or choose a projects directory. By default Dev HQ uses `~/Projects`.
-3. Optionally set `DEV_HQ_PROJECTS_ROOT` to another directory.
-4. Copy the contents of `CHATGPT_PROJECT_INSTRUCTIONS.md` into your ChatGPT Project instructions.
-5. Add the six files from `sources/` to the ChatGPT Project as Sources.
-6. Copy the example files you need and remove `.example` from their private local copies.
-7. Connect only the tools/connectors you actually use.
-8. Run the local watchdog when needed:
+Dev HQ adds a durable operating layer around the chat so the workflow can **plan, execute, verify, recover and continue** instead of relying on one uninterrupted conversation.
+
+## What you get
+
+- **Architecture-first project start** — architecture, full technical specification, stages, tests and decision points before implementation.
+- **Stage-by-stage execution** — bounded change → verification → checkpoint → next stage.
+- **Durable lifecycle runs** — task state survives interrupted chats and model/session limits.
+- **Operation control** — long-running tool calls get identity, deadlines and evidence expectations.
+- **Recovery without blind retries** — unresolved side effects are inspected before re-execution.
+- **Quality Gate 2.0** — Git/diff checks, secret detection, tests/lint/build and acceptance verification.
+- **Local Watchdog** — shows task state, operation state, stalls, resource usage and recovery guidance.
+- **Verified local backups** — checkpoint archives with manifests and SHA-256 verification.
+- **Reusable skills and Sources** — compact operational rules instead of one giant instruction file.
+- **Public/private separation** — reusable HQ logic stays in Git; environment, credentials and real project state stay local.
+
+## Watchdog
+
+The Watchdog is a lightweight local observer. It does not execute your project for you; it makes long work visible and helps detect when the task state, operation state or UI observation becomes stale.
+
+![Dev HQ Watchdog](docs/assets/watchdog.png)
+
+The screenshot above is from the real local Watchdog UI. `UNKNOWN` and `DEGRADED` are valid diagnostic states: Dev HQ prefers uncertainty over pretending that progress was verified.
+
+## Architecture
+
+```mermaid
+flowchart TD
+    U[User request] --> C[ChatGPT Project]
+    C --> I[Project instructions]
+    I --> S[Relevant Source / skill]
+    S --> A{New substantial project?}
+    A -- Yes --> T[Architecture + technical specification + stages]
+    A -- No --> R[Resolve current project state]
+    T --> R
+    R --> L[Lifecycle run]
+    L --> O[Registered operation / direct tool]
+    O --> V[Verification]
+    V --> Q[Quality Gate]
+    Q --> P[Checkpoint + project state + backup]
+    P --> N{More approved work?}
+    N -- Yes --> L
+    N -- No --> F[Report result to user]
+
+    W[Local Watchdog] -. observes .-> L
+    W -. observes .-> O
+    M[Optional memory / connectors] -. context .-> R
+    X[Optional Codex / external executor] -. bounded handoff .-> O
+```
+
+## 5-minute Quick Start
+
+### 1. Clone the repository
+
+Clone this repository with GitHub's **Code** button or your preferred Git client.
+
+### 2. Choose your projects root
+
+Core scripts use `~/Projects` by default. To override it:
+
+```powershell
+$env:DEV_HQ_PROJECTS_ROOT = "$HOME\Projects"
+```
+
+Optional settings are documented in `.env.example`. Dev HQ does **not** automatically load `.env` files.
+
+### 3. Create a ChatGPT Project
+
+Create a normal ChatGPT Project, then:
+
+1. copy the contents of `CHATGPT_PROJECT_INSTRUCTIONS.md` into the Project instructions;
+2. add the six files from `sources/` as Project Sources;
+3. connect only the tools you actually use.
+
+No Codex setup is required for the core workflow.
+
+### 4. Create local private state
+
+Copy only the templates you need and remove `.example` from the local copies, for example:
+
+```text
+ENVIRONMENT.example.md       -> ENVIRONMENT.md
+PROJECTS_REGISTRY.example.md -> PROJECTS_REGISTRY.md
+PROJECT_STATE.example.md     -> PROJECT_STATE.md
+```
+
+Those local files are ignored by Git.
+
+### 5. Start the Watchdog (optional)
+
+Windows:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\start-hq.ps1
 ```
 
-9. Run tests:
+Then open:
+
+```text
+http://127.0.0.1:32110/hq-status
+```
+
+### 6. Give Dev HQ a real task
+
+A good first prompt is:
+
+> I want to build a new project from scratch. First create the full architecture, technical specification, stages, tests and acceptance criteria. Do not start implementation until the plan is approved.
+
+After approval, Dev HQ follows the staged lifecycle automatically.
+
+## The development loop
+
+```text
+idea
+  -> architecture + technical specification
+  -> approved stages
+  -> lifecycle run
+  -> bounded implementation
+  -> verification
+  -> quality gate
+  -> checkpoint/state
+  -> next stage
+  -> final report
+```
+
+For potentially long or failure-prone calls, the operation is registered before execution. A live PID, a heartbeat or a reachable service is **not** treated as proof of progress.
+
+## Recovery model
+
+When a chat is interrupted, a tool times out or a model limit is reached, Dev HQ does not simply start over.
+
+It recovers the same saved run, inspects unresolved operations and artifacts read-only, determines whether the previous action completed, failed or has an unknown outcome, and only then continues.
+
+This is especially important for actions with side effects such as publishing, external messages, production changes and workflow execution.
+
+## ChatGPT Plus without Codex
+
+Dev HQ is designed around normal ChatGPT chat plus connected tools. Codex or another coding executor can be added for a bounded task, but it is not required to run the lifecycle, maintain project state, inspect files, execute tests or coordinate development.
+
+See the full walkthrough: **[Demo case — ChatGPT Plus without Codex](docs/DEMO_CASE_CHATGPT_PLUS.md)**.
+
+## Repository map
+
+| Path | Purpose |
+|---|---|
+| `CHATGPT_PROJECT_INSTRUCTIONS.md` | Compact top-level behavior for the ChatGPT Project |
+| `sources/` | Six focused operational Sources |
+| `scripts/task_lifecycle.py` | Durable task lifecycle runner |
+| `scripts/operation_control.py` | Operation registry and side-effect protection |
+| `scripts/hq_watchdog.py` | Local status observer and web UI |
+| `scripts/quality_gate.py` | Verification and release-quality checks |
+| `scripts/backup_project.py` | Verified project checkpoints |
+| `scripts/public_release_audit.py` | Secret/privacy scan before public release |
+| `skills/` | Optional tool-specific instructions |
+| `templates/` | Reusable project/ADR/quality templates |
+| `*.example.md` | Safe templates for local private state |
+
+## Public vs private state
+
+The repository intentionally excludes real machine/account/project state.
+
+Keep these local:
+
+- credentials, tokens, cookies and private keys;
+- environment inventory and private endpoints;
+- current project registry and project state;
+- runtime logs and lifecycle artifacts;
+- generated handoffs and records;
+- personal model/tool preferences.
+
+The `.gitignore` and public release audit are designed around that boundary.
+
+## Security and release checks
+
+Before publishing changes:
 
 ```powershell
+python scripts\public_release_audit.py .
 python -m pytest -q
 ```
 
-## Configuration
+For code/config tasks inside a managed project, Dev HQ also uses its own Quality Gate 2.0 before declaring technical completion.
 
-`DEV_HQ_PROJECTS_ROOT` is the only important path setting for the core scripts. If it is not set, the scripts use `~/Projects`.
+A secret that has ever been committed should be rotated even if it is later removed from the working tree.
 
-Optional watchdog settings are documented in `.env.example`. The repository does not load `.env` automatically; set environment variables through your shell or preferred local secret/config manager.
+## What Dev HQ is not
 
-## Public vs private files
+Dev HQ is **not**:
 
-Public/reusable files include the lifecycle scripts, quality gate, watchdog, staged execution rules, security boundaries, templates and skills.
+- an autonomous background coding agent;
+- a replacement for tests or code review;
+- a promise that a stopped ChatGPT turn will resume by itself;
+- an automatic retry engine for unknown side effects;
+- a reason to put credentials or production state into the repository.
 
-Private files such as `ENVIRONMENT.md`, `PROJECTS_REGISTRY.md`, `PROJECT_STATE.md`, runtime logs, handoffs, records, credentials and `.env` files are ignored by Git. Use the corresponding `.example.md` files as templates.
+The Watchdog observes and diagnoses. The chat remains the decision and execution layer.
 
-## Security model
+## Current platform notes
 
-- Never commit real API keys, tokens, passwords, cookies, service-account files or private keys.
-- Keep production endpoints and infrastructure inventory in private local files unless they are intentionally public.
-- A secret that has ever been committed should be rotated even after it is removed from the working tree.
-- Run `scripts/public_release_audit.py` before every public release.
-
-## Architecture
-
-The normal flow is:
-
-```text
-User request
-  -> ChatGPT Project instructions
-  -> relevant Source / skill
-  -> staged execution
-  -> lifecycle run
-  -> tool / connector
-  -> verification
-  -> quality gate
-  -> checkpoint / state update
-  -> report
-```
-
-For long operations, Dev HQ records operation identity, deadline and evidence. A heartbeat or running process is not treated as proof of progress.
-
-## Important limitation
-
-The watchdog observes local state and operation metadata. It does not continue a stopped ChatGPT turn, automatically retry external side effects, or replace explicit verification.
-
-## Repository status
-
-This directory is the sanitized public edition. Before publishing changes, run the release audit and review the findings.
+- Core lifecycle/quality scripts are Python-based.
+- The current local Watchdog integration is Windows-first.
+- External connectors are optional; use only the tools available in your own ChatGPT environment.
+- Model names are intentionally not hard-coded into the public workflow.
 
 ## License
 
-MIT — see `LICENSE`.
+MIT — see [LICENSE](LICENSE).
