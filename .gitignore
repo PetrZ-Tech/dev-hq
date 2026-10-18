@@ -1,0 +1,49 @@
+# Secrets and local credentials
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+credentials*.json
+service-account*.json
+secrets/
+credentials/
+
+# Local HQ state and generated artifacts
+runtime/
+handoffs/
+records/
+.codebase-memory/
+.pytest_cache/
+__pycache__/
+*.pyc
+*.log
+
+# Local/private configuration
+ENVIRONMENT.md
+PROJECTS_REGISTRY.md
+PROJECTS_REGISTRY_CURRENT.md
+PROJECT_STATE.md
+PROJECT_DASHBOARD.md
+*.local.json
+
+# Build / dependencies
+node_modules/
+.next/
+dist/
+build/
+coverage/
+.venv/
+venv/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+MODEL_ROUTING.local.md
+TOOLS_REGISTRY.local.md
+HQ_ROADMAP.md
