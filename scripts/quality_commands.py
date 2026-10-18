@@ -85,6 +85,14 @@ def blocked(value):
     return any(re.search(r'\b' + word + r'\b', value.lower()) for word in BLOCKED)
 
 
+def blocked_argv(argv):
+    """Check command tokens without mistaking the trusted Python executable path
+    for a forbidden action (e.g. a venv under a folder named 'dev-hq').
+    """
+    return any(blocked(value) for pos, value in enumerate(argv)
+               if pos != 0 or value != sys.executable)
+
+
 def local_entry(project, value, extensions):
     path = (Path(project) / value).resolve()
     if Path(project).resolve() not in path.parents or path.suffix.lower() not in extensions or not path.is_file():
@@ -122,7 +130,7 @@ def compile_plan(project, command):
     def leaf(argv, stack):
         if len(steps) >= MAX_STEPS:
             raise Refused('Too many expanded command steps')
-        if any(blocked(x) for x in argv):
+        if blocked_argv(argv):
             raise Refused('Deployment, external write or long-running command refused')
         executable = argv[0]
         # Explicit paths are supported only for the current Python interpreter.
@@ -179,7 +187,7 @@ def compile_plan(project, command):
                     expand(argv[start:i], stack)
                     start = i + 1
             return
-        if any(blocked(x) for x in argv):
+        if blocked_argv(argv):
             raise Refused('Deployment, external write or long-running command refused')
         if argv[0] == 'npm':
             if len(argv) == 2 and argv[1] == 'test':
