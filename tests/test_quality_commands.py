@@ -88,6 +88,16 @@ class PlannerTests(unittest.TestCase):
         self.assertEqual(self.plan('node "safe file.js"')['steps'][0]['argv'],['node','safe file.js'])
         self.assertEqual(self.plan([sys.executable,'-m','unittest'])['steps'][0]['argv'],[sys.executable,'-m','unittest'])
 
+    def test_python_executable_path_with_blocked_word_is_allowed(self):
+        interpreter = r'C:\\Users\\Example\\Projects\\dev-hq\\.venv\\Scripts\\python.exe'
+        with patch.object(policy.sys, 'executable', interpreter):
+            self.assertEqual(self.plan([interpreter, '-m', 'unittest'])['steps'][0]['argv'],
+                             [interpreter, '-m', 'unittest'])
+            with self.assertRaises(policy.Refused):
+                self.plan([interpreter, '-m', 'unittest', 'deploy'])
+            with self.assertRaises(policy.Refused):
+                self.plan([r'C:\\Other\\dev-hq\\python.exe', '-m', 'unittest'])
+
     def test_argv_operator_is_never_interpreted_as_chain(self):
         with self.assertRaises(policy.Refused):self.plan(['node','test.js','&&','node','after.js'])
 
