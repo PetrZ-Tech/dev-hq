@@ -24,16 +24,16 @@ Dev HQ adds a durable operating layer around the chat so the workflow can **plan
 
 ## What you get
 
-- **Architecture-first project start** вЂ” architecture, full technical specification, stages, tests and decision points before implementation.
-- **Stage-by-stage execution** вЂ” bounded change в†’ verification в†’ checkpoint в†’ next stage.
-- **Durable lifecycle runs** вЂ” task state survives interrupted chats and model/session limits.
-- **Operation control** вЂ” long-running tool calls get identity, deadlines and evidence expectations.
-- **Recovery without blind retries** вЂ” unresolved side effects are inspected before re-execution.
-- **Quality Gate 2.0** вЂ” Git/diff checks, secret detection, tests/lint/build and acceptance verification.
-- **Local Watchdog** вЂ” shows task state, operation state, stalls, resource usage and recovery guidance.
-- **Verified local backups** вЂ” checkpoint archives with manifests and SHA-256 verification.
-- **Reusable skills and Sources** вЂ” compact operational rules instead of one giant instruction file.
-- **Public/private separation** вЂ” reusable HQ logic stays in Git; environment, credentials and real project state stay local.
+- **Architecture-first project start** — architecture, full technical specification, stages, tests and decision points before implementation.
+- **Stage-by-stage execution** — bounded change → verification → checkpoint → next stage.
+- **Durable lifecycle runs** — task state survives interrupted chats and model/session limits.
+- **Operation control** — long-running tool calls get identity, deadlines and evidence expectations.
+- **Recovery without blind retries** — unresolved side effects are inspected before re-execution.
+- **Quality Gate 2.0** — Git/diff checks, secret detection, tests/lint/build and acceptance verification.
+- **Local Watchdog** — shows task state, operation state, stalls, resource usage and recovery guidance.
+- **Verified local backups** — checkpoint archives with manifests and SHA-256 verification.
+- **Reusable skills and Sources** — compact operational rules instead of one giant instruction file.
+- **Public/private separation** — reusable HQ logic stays in Git; environment, credentials and real project state stay local.
 
 ## Watchdog
 
@@ -158,7 +158,7 @@ This is especially important for actions with side effects such as publishing, e
 
 Dev HQ is designed around normal ChatGPT chat plus connected tools. Codex or another coding executor can be added for a bounded task, but it is not required to run the lifecycle, maintain project state, inspect files, execute tests or coordinate development.
 
-See the full walkthrough: **[Demo case вЂ” ChatGPT Plus without Codex](docs/DEMO_CASE_CHATGPT_PLUS.md)**.
+See the full walkthrough: **[Demo case — ChatGPT Plus without Codex](docs/DEMO_CASE_CHATGPT_PLUS.md)**.
 
 ## Repository map
 
@@ -225,4 +225,4 @@ The Watchdog observes and diagnoses. The chat remains the decision and execution
 
 ## License
 
-MIT вЂ” see [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE).
